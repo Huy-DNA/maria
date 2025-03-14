@@ -43,6 +43,8 @@ if(NOT DEFINED BUILD_ENGINE_DONE) # to test MyCppGame into root project
     add_subdirectory(${COCOS2DX_ROOT_PATH}/cocos ${ENGINE_BINARY_PATH}/cocos/core)
 endif()
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # record sources, headers, resources...
 set(GAME_SOURCE)
 set(GAME_HEADER)
