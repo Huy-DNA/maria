@@ -1,15 +1,14 @@
 local MenuScene = class("MenuScene", cc.load("mvc").ViewBase)
 
 function MenuScene:onCreate()
-  -- add background image
-  display.newSprite("HelloWorld.png")
-      :move(display.center)
-      :addTo(self)
+  local size = cc.Director:getInstance():getWinSize()
 
-  -- add HelloWorld label
-  cc.Label:createWithSystemFont("Hello World", "Arial", 40)
-      :move(display.cx, display.cy + 200)
-      :addTo(self)
+  local background = cc.LayerColor:create(cc.c4b(50, 120, 200, 255))
+  self:addChild(background)
+
+  local titleLabel = cc.Label:createWithSystemFont("Mario", "Arial", 50)
+  titleLabel:setPosition(size.width / 2, size.height - 50)
+  self:addChild(titleLabel)
 end
 
 return MenuScene
