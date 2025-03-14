@@ -6,3 +6,4 @@ bin
 lib
 engine
 compile_commands.json
+.cache
