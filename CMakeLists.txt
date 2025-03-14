@@ -1,5 +1,6 @@
 #/****************************************************************************
 # Copyright (c) 2013-2014 cocos2d-x.org
+# Copyright (c) 2015-2017 Chukong Technologies Inc.
 #
 # http://www.cocos2d-x.org
 #
@@ -21,9 +22,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 # ****************************************************************************/
+
 cmake_minimum_required(VERSION 3.6)
 
-set(APP_NAME mario)
+set(APP_NAME Mario)
 
 project(${APP_NAME})
 
@@ -33,121 +35,126 @@ if(XCODE)
     endif()
 endif()
 
-set(RUNTIME_SRC_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/frameworks/runtime-src)
-set(COCOS2DX_ROOT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/frameworks/cocos2d-x)
-set(CMAKE_MODULE_PATH ${COCOS2DX_ROOT_PATH}/cmake/Modules/)
+if(NOT DEFINED BUILD_ENGINE_DONE) # to test MyCppGame into root project
+    set(COCOS2DX_ROOT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cocos2d)
+    set(CMAKE_MODULE_PATH ${COCOS2DX_ROOT_PATH}/cmake/Modules/)
 
-include(CocosBuildSet)
-set(BUILD_LUA_LIBS ON)
-add_subdirectory(${COCOS2DX_ROOT_PATH}/cocos ${ENGINE_BINARY_PATH}/cocos/core)
-
-# script and source files info, not need to compile
-set(res_res_folders
-    "${CMAKE_CURRENT_SOURCE_DIR}/res"
-    )
-set(res_src_folders
-    "${CMAKE_CURRENT_SOURCE_DIR}/src"
-    )
-if(APPLE OR VS)
-    cocos_mark_multi_resources(res_res RES_TO "Resources/res" FOLDERS ${res_res_folders})
-    cocos_mark_multi_resources(res_src RES_TO "Resources/src" FOLDERS ${res_src_folders})
-    set(cc_common_res ${res_res} ${res_src} ${res_script})
+    include(CocosBuildSet)
+    add_subdirectory(${COCOS2DX_ROOT_PATH}/cocos ${ENGINE_BINARY_PATH}/cocos/core)
 endif()
 
-# record sources, headers
-set(GAME_HEADER ${RUNTIME_SRC_ROOT}/Classes/AppDelegate.h)
-set(GAME_SOURCE ${RUNTIME_SRC_ROOT}/Classes/AppDelegate.cpp)
-# sources need to compile info, include dirs and source files
+# record sources, headers, resources...
+set(GAME_SOURCE)
+set(GAME_HEADER)
+
+set(GAME_RES_FOLDER
+    "${CMAKE_CURRENT_SOURCE_DIR}/Resources"
+    )
+if(APPLE OR WINDOWS)
+    cocos_mark_multi_resources(common_res_files RES_TO "Resources" FOLDERS ${GAME_RES_FOLDER})
+endif()
+
+# add cross-platforms source files and header files 
+list(APPEND GAME_SOURCE
+     Classes/AppDelegate.cpp
+     Classes/HelloWorldScene.cpp
+     )
+list(APPEND GAME_HEADER
+     Classes/AppDelegate.h
+     Classes/HelloWorldScene.h
+     )
 
 if(ANDROID)
     # change APP_NAME to the share library name for Android, it's value depend on AndroidManifest.xml
-    set(APP_NAME cocos2dlua)
-    list(APPEND GAME_SOURCE ${RUNTIME_SRC_ROOT}/proj.android/app/jni/hellolua/main.cpp)
+    set(APP_NAME MyGame)
+    list(APPEND GAME_SOURCE
+         proj.android/app/jni/hellocpp/main.cpp
+         )
 elseif(LINUX)
-    list(APPEND GAME_SOURCE ${RUNTIME_SRC_ROOT}/proj.linux/main.cpp)
+    list(APPEND GAME_SOURCE
+         proj.linux/main.cpp
+         )
 elseif(WINDOWS)
     list(APPEND GAME_HEADER
-         ${RUNTIME_SRC_ROOT}/proj.win32/main.h
+         proj.win32/main.h
+         proj.win32/resource.h
          )
     list(APPEND GAME_SOURCE
-         ${RUNTIME_SRC_ROOT}/proj.win32/main.cpp
-         ${cc_common_res}
+         proj.win32/main.cpp
+         proj.win32/game.rc
+         ${common_res_files}
          )
 elseif(APPLE)
     if(IOS)
         list(APPEND GAME_HEADER
-             ${RUNTIME_SRC_ROOT}/proj.ios_mac/ios/AppController.h
-             ${RUNTIME_SRC_ROOT}/proj.ios_mac/ios/RootViewController.h
+             proj.ios_mac/ios/AppController.h
+             proj.ios_mac/ios/RootViewController.h
              )
         set(APP_UI_RES
-            ${RUNTIME_SRC_ROOT}/proj.ios_mac/ios/LaunchScreen.storyboard
-            ${RUNTIME_SRC_ROOT}/proj.ios_mac/ios/LaunchScreenBackground.png
-            ${RUNTIME_SRC_ROOT}/proj.ios_mac/ios/Images.xcassets
+            proj.ios_mac/ios/LaunchScreen.storyboard
+            proj.ios_mac/ios/LaunchScreenBackground.png
+            proj.ios_mac/ios/Images.xcassets
             )
         list(APPEND GAME_SOURCE
-             ${RUNTIME_SRC_ROOT}/proj.ios_mac/ios/main.m
-             ${RUNTIME_SRC_ROOT}/proj.ios_mac/ios/AppController.mm
-             ${RUNTIME_SRC_ROOT}/proj.ios_mac/ios/RootViewController.mm
-             ${RUNTIME_SRC_ROOT}/proj.ios_mac/ios/Prefix.pch
-             ${RUNTIME_SRC_ROOT}/proj.ios_mac/ios/build-cfg.json
+             proj.ios_mac/ios/main.m
+             proj.ios_mac/ios/AppController.mm
+             proj.ios_mac/ios/RootViewController.mm
+             proj.ios_mac/ios/Prefix.pch
              ${APP_UI_RES}
              )
     elseif(MACOSX)
-        list(APPEND GAME_HEADER
-             )
         set(APP_UI_RES
-            ${RUNTIME_SRC_ROOT}/proj.ios_mac/mac/Icon.icns
-            ${RUNTIME_SRC_ROOT}/proj.ios_mac/mac/Info.plist
+            proj.ios_mac/mac/Icon.icns
+            proj.ios_mac/mac/Info.plist
             )
         list(APPEND GAME_SOURCE
-             ${RUNTIME_SRC_ROOT}/proj.ios_mac/mac/main.cpp
-             ${RUNTIME_SRC_ROOT}/proj.ios_mac/mac/Prefix.pch
+             proj.ios_mac/mac/main.cpp
+             proj.ios_mac/mac/Prefix.pch
              ${APP_UI_RES}
              )
     endif()
-    list(APPEND GAME_SOURCE ${cc_common_res})
+    list(APPEND GAME_SOURCE ${common_res_files})
 endif()
-
-set(APP_SRC ${GAME_HEADER} ${GAME_SOURCE})
 
 # mark app complie info and libs info
+set(all_code_files
+    ${GAME_HEADER}
+    ${GAME_SOURCE}
+    )
 if(NOT ANDROID)
-    add_executable(${APP_NAME} ${APP_SRC})
+    add_executable(${APP_NAME} ${all_code_files})
 else()
-    add_library(${APP_NAME} SHARED ${APP_SRC})
+    add_library(${APP_NAME} SHARED ${all_code_files})
     add_subdirectory(${COCOS2DX_ROOT_PATH}/cocos/platform/android ${ENGINE_BINARY_PATH}/cocos/platform)
     target_link_libraries(${APP_NAME} -Wl,--whole-archive cpp_android_spec -Wl,--no-whole-archive)
-    add_subdirectory(${COCOS2DX_ROOT_PATH}/cocos/scripting/lua-bindings/proj.android ${ENGINE_BINARY_PATH}/cocos/lua-android)
-    target_link_libraries(${APP_NAME} -Wl,--whole-archive lua_android_spec -Wl,--no-whole-archive)
 endif()
 
-target_link_libraries(${APP_NAME} luacocos2d)
-target_include_directories(${APP_NAME} PRIVATE ${RUNTIME_SRC_ROOT}/Classes)
+target_link_libraries(${APP_NAME} cocos2d)
+target_include_directories(${APP_NAME}
+        PRIVATE Classes
+        PRIVATE ${COCOS2DX_ROOT_PATH}/cocos/audio/include/
+)
 
-# mark app resources, resource will be copy auto after mark
+# mark app resources
 setup_cocos_app_config(${APP_NAME})
 if(APPLE)
     set_target_properties(${APP_NAME} PROPERTIES RESOURCE "${APP_UI_RES}")
     set_xcode_property(${APP_NAME} INSTALL_PATH "\$(LOCAL_APPS_DIR)")
+
     if(MACOSX)
-        set_target_properties(${APP_NAME} PROPERTIES
-                              MACOSX_BUNDLE_INFO_PLIST "${RUNTIME_SRC_ROOT}/proj.ios_mac/mac/Info.plist"
-                              )
-        set_target_properties(${APP_NAME} PROPERTIES
-            LINK_FLAGS "-pagezero_size 10000 -image_base 100000000"
-        )
+        set_xcode_property(${APP_NAME} INFOPLIST_FILE "${CMAKE_CURRENT_SOURCE_DIR}/proj.ios_mac/mac/Info.plist")
     elseif(IOS)
-        set_target_properties(${APP_NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${RUNTIME_SRC_ROOT}/proj.ios_mac/ios/Info.plist")
+        set_xcode_property(${APP_NAME} INFOPLIST_FILE "${CMAKE_CURRENT_SOURCE_DIR}/proj.ios_mac/ios/Info.plist")
         set_xcode_property(${APP_NAME} ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon")
-        set_xcode_property(${APP_NAME} DEVELOPMENT_TEAM "")
-        set_xcode_property(${APP_NAME} CODE_SIGN_IDENTITY "iPhone Developer")
     endif()
+
+    # For code-signing, set the DEVELOPMENT_TEAM:
+    #set_xcode_property(${APP_NAME} DEVELOPMENT_TEAM "GRLXXXX2K9")
 elseif(WINDOWS)
     cocos_copy_target_dll(${APP_NAME})
 endif()
-# copy resource on linux or WINDOWS
+
 if(LINUX OR WINDOWS)
     cocos_get_resource_path(APP_RES_DIR ${APP_NAME})
-    cocos_copy_target_res(${APP_NAME} LINK_TO ${APP_RES_DIR}/res FOLDERS ${res_res_folders})
-    cocos_copy_lua_scripts(${APP_NAME} ${res_src_folders} ${APP_RES_DIR}/src )
+    cocos_copy_target_res(${APP_NAME} LINK_TO ${APP_RES_DIR} FOLDERS ${GAME_RES_FOLDER})
 endif()
